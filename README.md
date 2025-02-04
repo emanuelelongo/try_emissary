@@ -47,8 +47,13 @@ In this example we create two μ-services and let emissary forward traffic to th
 helm install example path-routing-example
 
 curl localhost:8080/sushi/
+🍣
 curl localhost:8080/sushi/bar
+🍣
 curl localhost:8080/pizza/
+🍕
+curl localhost:8080/foo/
+🍝
 
 helm delete example
 ```
@@ -61,8 +66,30 @@ In this example we create two μ-services and let emissary forward traffic to th
 helm install example host-routing-example
 
 curl localhost:8080/ -H host:pizza.lcl
+🍕
 curl localhost:8080/foo -H host:pizza.lcl
+🍕
 curl localhost:8080/bar -H host:sushi.lcl
+🍣
+curl localhost:8080/foo/
+🍝
+
+helm delete example
+```
+
+### Mixing routes by a host and path
+
+In this example we create two μ-services and let emissary forward traffic by matching the request host with a given list.
+
+```bash
+helm install example mixed-routing-example
+
+curl localhost:8080/ -H host:pizza.lcl 
+🍕
+curl localhost:8080/sushi/bar
+🍣
+curl localhost:8080/foo
+🍝
 
 helm delete example
 ```
@@ -75,9 +102,41 @@ In this example we create two μ-services and let emissary forward traffic by ma
 helm install example host-list-example
 
 curl localhost:8080/foo/bar -H host:host1.lcl
+🍕
 curl localhost:8080/foo/bar -H host:host2.lcl
+🍣
 curl localhost:8080/foo/bar -H host:host3.lcl
+🍕
 curl localhost:8080/foo/bar -H host:host4.lcl
+🍣
 
 helm delete example
+```
+
+## Warp Benchmark
+
+```bash
+helm install benchmark benchmark
+```
+
+This will expose create a Min.io instance and 5 different mappings
+
+- `minio-1.lcl` 
+- `minio-2.lcl`
+- `minio-3.lcl`
+- `minio-4.lcl`
+- `*`
+
+
+```bash
+warp mixed --host=minio-{0...4}.lcl:8080 \
+    --access-key=minioadmin \
+    --secret-key=minioadmin \
+    --objects=500 \
+    --obj.size=100MiB \
+    --concurrent=30 \
+    --duration=60s
+
+helm delete benchmark
+
 ```
