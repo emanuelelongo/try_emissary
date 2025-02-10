@@ -1,19 +1,19 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: minio
+  name: minio-aws
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: minio
+      app: minio-aws
   template:
     metadata:
       labels:
-        app: minio
+        app: minio-aws
     spec:
       containers:
-      - name: minio
+      - name: minio-aws
         image: quay.io/minio/minio:latest
         args:
         - server
@@ -27,22 +27,24 @@ spec:
           value: "minioadmin"
         - name: MINIO_ROOT_PASSWORD
           value: "minioadmin"
+        - name: MINIO_DOMAIN
+          value: "test.lcl"
         ports:
         - containerPort: 8080
         - containerPort: 9001
 ---
-{{- range $i, $_ := until (int .Values.hostCount ) }}
 apiVersion: v1
 kind: Service
 metadata:
-  name: minio-{{ $i }}
+  name: minio-aws
 spec:
   type: ClusterIP
   ports:
     - port: 8080
       targetPort: 8080
       name: api
+    - port: 9001
+      targetPort: 9001
+      name: console
   selector:
-    app: minio
----
-{{- end }}
+    app: minio-aws

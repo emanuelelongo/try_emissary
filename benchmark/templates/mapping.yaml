@@ -1,0 +1,22 @@
+---
+apiVersion: getambassador.io/v3alpha1
+kind: Mapping
+metadata:
+  name: witt
+spec:
+  hostname: "*"
+  headers:
+    x-forward-to: witt
+  prefix: /
+  service: minio-witt:8080
+---
+apiVersion: getambassador.io/v3alpha1
+kind: Mapping
+metadata:
+  name: aws
+spec:
+  hostname: "*"
+  headers:
+    x-forward-to: aws
+  prefix: /
+  service: minio-aws:8080
