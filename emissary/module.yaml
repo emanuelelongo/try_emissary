@@ -1,0 +1,44 @@
+apiVersion: getambassador.io/v3alpha1
+kind: Module
+metadata:
+  name: ambassador
+  namespace: emissary
+spec:
+  config:
+    lua_scripts: |
+      local function load_buckets(filename)
+          local buckets = {}
+          local file = io.open(filename, "r")
+          if file then
+              for line in file:lines() do
+                  table.insert(buckets, line)
+              end
+              file:close()
+          end
+          return buckets
+      end
+
+      local allowed_buckets = load_buckets("/etc/buckets/buckets.txt")
+
+      function envoy_on_response(response_handle)
+        response_handle:headers():add("Lua-Scripts-Enabled", "Processed")
+      end
+
+      function envoy_on_request(handle)
+        local bucket_value = handle:headers():get("x-cbt-bucket")
+
+        local function is_in_list(value, list)
+            for _, v in ipairs(list) do
+                if v == value then
+                    return true
+                end
+            end
+            return false
+        end
+
+        if bucket_value and is_in_list(bucket_value, allowed_buckets) then
+            handle:headers():add("x-route-to", "pizza")
+        else
+            handle:headers():add("x-route-to", "sushi")
+        end
+      end

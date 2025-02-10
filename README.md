@@ -113,6 +113,36 @@ curl localhost:8080/foo/bar -H host:host4.lcl
 helm delete example
 ```
 
+### Lua
+
+In this example we use a LUA function to apply a custom routing logic.
+
+Since we need to modify the Module resource and to mount a ConfigMap as a volume, Emissary needs to be installed with some changes to the _getting started_ yamls.
+
+```bash
+kubectl create namespace emissary && \
+kubectl apply -f emissary/emissary-crds.yaml && \
+kubectl wait --timeout=90s --for=condition=available deployment emissary-apiext -n emissary-system
+
+kubectl apply -f emissary/config.yaml
+
+kubectl apply -f emissary/emissary-emissaryns.yaml && \
+kubectl -n emissary wait --for condition=available --timeout=90s deploy -lproduct=aes
+
+
+helm install example lua-routing
+
+curl localhost:8080/foo/bar -H "x-cbt-bucket:bucke1"
+🍕
+curl localhost:8080/foo/bar -H "x-cbt-bucket:bucke2"
+🍕
+curl localhost:8080/foo/bar -H "x-cbt-bucket:bucke4"
+🍣
+
+helm delete example
+
+```
+
 ## Warp Benchmark
 
 ```bash

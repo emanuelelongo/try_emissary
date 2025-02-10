@@ -1,0 +1,22 @@
+---
+apiVersion: getambassador.io/v3alpha1
+kind: Mapping
+metadata:
+  name: pizza
+spec:
+  hostname: "*"
+  headers:
+    x-route-to: pizza
+  prefix: /
+  service: pizza
+---
+apiVersion: getambassador.io/v3alpha1
+kind: Mapping
+metadata:
+  name: sushi
+spec:
+  hostname: "*"
+  headers:
+    x-route-to: sushi
+  prefix: /
+  service: sushi

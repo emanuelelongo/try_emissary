@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: bucket-list
+  namespace: emissary
+data:
+  buckets.txt: |
+    bucket1
+    bucket2
+    bucket3
