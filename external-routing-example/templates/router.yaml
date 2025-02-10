@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bucket-router
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bucket-router
+  template:
+    metadata:
+      labels:
+        app: bucket-router
+    spec:
+      containers:
+      - name: bucket-router
+        image: emanuelelongo/bucket-router:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 5000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: bucket-router
+spec:
+  selector:
+    app: bucket-router
+  ports:
+    - protocol: TCP
+      port: 5000
+      targetPort: 5000

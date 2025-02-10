@@ -1,0 +1,7 @@
+apiVersion: getambassador.io/v3alpha1
+kind: AuthService
+metadata:
+  name: authentication
+spec:
+  auth_service: "bucket-router.default:5000"
+  proto: http
