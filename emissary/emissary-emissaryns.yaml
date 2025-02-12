@@ -72,7 +72,7 @@ spec:
     app.kubernetes.io/instance: emissary-ingress
     app.kubernetes.io/name: emissary-ingress
     profile: main
-  type: LoadBalancer
+  type: ClusterIP
 ---
 apiVersion: v1
 kind: Service
@@ -394,6 +394,57 @@ spec:
       - name: bucket-list-volume
         configMap:
           name: bucket-list
+---
+apiVersion: getambassador.io/v3alpha1
+kind: Module
+metadata:
+  labels:
+    app.kubernetes.io/component: emissary-ingress
+    app.kubernetes.io/instance: emissary-ingress
+    app.kubernetes.io/managed-by: getambassador.io
+    app.kubernetes.io/name: emissary-ingress
+    app.kubernetes.io/part-of: emissary-ingress
+    product: aes
+  name: ambassador
+  namespace: emissary
+spec:
+  config:
+    diagnostics:
+      allow_non_local: true
+      enabled: false
+    lua_scripts: |
+      local function load_buckets(filename)
+          local buckets = {}
+          local file = io.open(filename, "r")
+          if file then
+              for line in file:lines() do
+                  table.insert(buckets, line)
+              end
+              file:close()
+          end
+          return buckets
+      end
+
+      local buckets = load_buckets("/etc/buckets/buckets.txt")
+
+      function envoy_on_request(handle)
+        local bucket_value = handle:headers():get("x-cbt-bucket")
+
+        local function is_in_list(value, list)
+            for _, v in ipairs(list) do
+                if v == value then
+                    return true
+                end
+            end
+            return false
+        end
+
+        if bucket_value and is_in_list(bucket_value, buckets) then
+            handle:headers():add("x-forward-to", "witt")
+        else
+            handle:headers():add("x-forward-to", "aws")
+        end
+      end
 ---
 apiVersion: v1
 kind: ServiceAccount

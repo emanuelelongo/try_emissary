@@ -1,0 +1,66 @@
+diff --git a/cli/client.go b/cli/client.go
+index 0488dc2..cc47302 100644
+--- a/cli/client.go
++++ b/cli/client.go
+@@ -52,6 +52,18 @@ const (
+ 	hostSelectTypeWeighed    hostSelectType = "weighed"
+ )
+
++type CustomTransport struct {
++	Transport http.RoundTripper
++	Headers   map[string]string
++}
++
++func (c *CustomTransport) RoundTrip(req *http.Request) (*http.Response, error) {
++	for key, value := range c.Headers {
++		req.Header.Set(key, value)
++	}
++	return c.Transport.RoundTrip(req)
++}
++
+ func newClient(ctx *cli.Context) func() (cl *minio.Client, done func()) {
+ 	hosts := parseHosts(ctx.String("host"), ctx.Bool("resolve-host"))
+ 	switch len(hosts) {
+@@ -224,6 +236,26 @@ func clientTransport(ctx *cli.Context) http.RoundTripper {
+ 			http2.ConfigureTransport(tr)
+ 		}
+ 	}
++
++	var customTransport *CustomTransport
++	headers := map[string]string{}
++	headerArgs := ctx.StringSlice("header")
++	if headerArgs != nil {
++		for _, header := range headerArgs {
++			if !strings.Contains(header, ":") {
++				fatalIf(probe.NewError(errors.New("invalid header format")), "Invalid header format")
++			}
++			parts := strings.SplitN(header, ":", 2)
++			headers[strings.TrimSpace(parts[0])] = strings.TrimSpace(parts[1])
++		}
++		customTransport = &CustomTransport{
++			Transport: tr,
++			Headers:   headers,
++		}
++
++		return customTransport
++	}
++
+ 	return tr
+ }
+
+diff --git a/cli/flags.go b/cli/flags.go
+index 72aedd5..bf2c271 100644
+--- a/cli/flags.go
++++ b/cli/flags.go
+@@ -246,6 +246,11 @@ var ioFlags = []cli.Flag{
+ 		Value: "",
+ 		Usage: "Specify custom storage class, for instance 'STANDARD' or 'REDUCED_REDUNDANCY'.",
+ 	},
++	cli.StringSliceFlag{
++		Name:  "header",
++		Value: &cli.StringSlice{},
++		Usage: "Specify custom header to send with each request. Can be used multiple times.",
++	},
+ 	cli.BoolFlag{
+ 		Name:   "disable-http-keepalive",
+ 		Usage:  "Disable HTTP Keep-Alive",
